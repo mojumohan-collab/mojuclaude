@@ -22,6 +22,24 @@ public class MainActivity extends Activity {
     private static final String APP_URL =
         "https://script.google.com/macros/s/AKfycbzBV00b_T9p06DFl19No86XZ9oUKd1jlCCiVXx_YYWx2vdNTe9CmhyZ_WhFrtwPQOnw/exec";
 
+
+    // Google Apps Script-nte mukalile "This application was created by..." banner maraykkunnu
+    private static final String HIDE_BANNER_JS =
+        "(function(){function fix(){var f=document.getElementById('sandboxFrame')||document.querySelector('iframe');" +
+        "if(!f)return;var keep=[];var n=f;while(n){keep.push(n);n=n.parentElement;}" +
+        "var all=document.body?document.body.querySelectorAll('*'):[];" +
+        "for(var i=0;i<all.length;i++){var e=all[i];if(keep.indexOf(e)<0&&e.tagName!='SCRIPT'&&e.tagName!='STYLE'){e.style.setProperty('display','none','important');}}" +
+        "f.style.setProperty('position','fixed','important');f.style.setProperty('top','0','important');" +
+        "f.style.setProperty('left','0','important');f.style.setProperty('width','100%','important');" +
+        "f.style.setProperty('height','100%','important');f.style.setProperty('border','0','important');" +
+        "f.style.setProperty('z-index','2147483647','important');}" +
+        "fix();var c=0;var t=setInterval(function(){fix();if(++c>30)clearInterval(t);},300);})();";
+
+    private void hideBanner(WebView v) {
+        String u = v.getUrl();
+        if (u != null && u.contains("script.google.com")) v.evaluateJavascript(HIDE_BANNER_JS, null);
+    }
+
     private static final int FILE_CHOOSER = 1001;
     private WebView webView;
     private ProgressBar progress;
@@ -65,6 +83,10 @@ public class MainActivity extends Activity {
                 return true;
             }
             @Override
+            public void onPageFinished(WebView view, String url) {
+                hideBanner(view);
+            }
+            @Override
             public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError err) {
                 if (req.isForMainFrame()) {
                     view.loadData("<html><body style='font-family:sans-serif;text-align:center;padding-top:40%'>"
@@ -80,6 +102,7 @@ public class MainActivity extends Activity {
             public void onProgressChanged(WebView view, int p) {
                 progress.setProgress(p);
                 progress.setVisibility(p < 100 ? View.VISIBLE : View.GONE);
+                if (p > 60) hideBanner(view);
             }
             @Override
             public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams params) {
